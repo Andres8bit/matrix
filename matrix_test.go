@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	matrix "github.com/andres8bit/numerical_methods/src/matrix"
+	matrix "github.com/andres8bit/matrix"
 )
 
 func TestConstructor(t *testing.T) {
