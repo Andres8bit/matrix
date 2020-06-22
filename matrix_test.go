@@ -36,7 +36,7 @@ func TestGetSet(t *testing.T) {
 
 	m := matrix.NewMatrix(row, col)
 	m.Set(x, y, val)
-	test, _ := m.Get(x, y)
+	test := m.Get(x, y)
 
 	if test != val {
 		t.Errorf("val was not set")
@@ -74,7 +74,7 @@ func TestGetSetCol(t *testing.T) {
 	col := int(r.Int63n(9))
 
 	m.SetCol(list[:], col)
-	test, _ := m.GetCol(col)
+	test := m.GetCol(col)
 
 	for i := 0; i < 10; i++ {
 		if test[i] != list[i] {
@@ -128,7 +128,7 @@ func TestNaiveElimination(t *testing.T) {
 	bmat.SetRow(b[:], 0)
 	matrix.Naive(a, xmat, bmat)
 	for i := 0; i < 4; i++ {
-		truth, _ := xmat.Get(0, i)
+		truth := xmat.Get(0, i)
 		if test[i] != truth {
 			t.Errorf("incorrect val")
 

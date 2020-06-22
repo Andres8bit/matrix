@@ -2,13 +2,16 @@ package matrix
 
 import (
 	"errors"
+	"fmt"
 	"math"
 )
 
+type numVal complex128
+
 type Matrix struct {
-	m []complex128 //matix made of Numtype
-	r int          //row count of matrix
-	c int          //col count of matrix
+	m []numVal //matix made of Numtype
+	r int      //row count of matrix
+	c int      //col count of matrix
 }
 
 //============= Methods: ======================
@@ -24,13 +27,13 @@ func NewMatrix(row, col int) *Matrix {
 	matrix.c = col
 	if row == 0 || col == 0 {
 		if row != 0 {
-			matrix.m = make([]complex128, row)
+			matrix.m = make([]numVal, row)
 		} else {
-			matrix.m = make([]complex128, col)
+			matrix.m = make([]numVal, col)
 		}
 
 	} else {
-		matrix.m = make([]complex128, row*col)
+		matrix.m = make([]numVal, row*col)
 	}
 	return matrix
 }
@@ -39,7 +42,7 @@ func NewMatrix(row, col int) *Matrix {
 func (m *Matrix) Copy(source *Matrix) {
 	m.r = source.r
 	m.c = source.c
-	m.m = make([]complex128, m.r*m.c)
+	m.m = make([]numVal, m.r*m.c)
 	copy(m.m, source.m)
 }
 
@@ -50,43 +53,47 @@ func (m *Matrix) ColCount() int { return m.c }
 
 func (m *Matrix) RowCount() int { return m.r }
 
-func (m *Matrix) Get(row, col int) (complex128, error) {
+func (m *Matrix) Get(row, col int) numVal {
 	if (row < m.r || row == 0) && (col < m.c || col == 0) {
-		return m.m[m.c*row+col], nil
+		return m.m[m.c*row+col]
 	}
-	return 0, errors.New("out of bounds")
+	fmt.Println("Error: out of bounds")
+
+	return 0
 }
 
-func (m *Matrix) GetRow(row int) ([]complex128, error) {
-	r := make([]complex128, m.c)
+func (m *Matrix) GetRow(row int) []numVal {
+	r := make([]numVal, m.c)
 	if row >= m.r {
-		return r, errors.New("out of bounds")
+		fmt.Println("Error: out of bounds")
+		return r
 	}
 
 	for i := 0; i < m.c; i++ {
 		r[i] = m.m[row*m.r+i]
 	}
 
-	return r, nil
+	return r
 }
 
-func (m *Matrix) GetCol(col int) ([]complex128, error) {
-	c := make([]complex128, m.r)
+func (m *Matrix) GetCol(col int) []numVal {
+	c := make([]numVal, m.r)
 
 	if col >= m.c {
-		return c, errors.New("out of bounds")
+		fmt.Println("Error: out of bounds")
+		return c
 	}
 	var i int
 	for ; i < m.c; i++ {
 		c[i] = m.m[i*m.c+col]
 	}
-	return c, nil
+	return c
 }
 
 // ======== End of Getters: ========
 
 // ======== Setters: ========
-func (m *Matrix) Set(row, col int, val complex128) error {
+func (m *Matrix) Set(row, col int, val numVal) error {
 	if (row < m.r || row == 0) && (col < m.c || col == 0) {
 		m.m[row*m.c+col] = val
 
@@ -95,7 +102,7 @@ func (m *Matrix) Set(row, col int, val complex128) error {
 	return errors.New("out of bounds")
 }
 
-func (m *Matrix) SetRow(vals []complex128, row int) error {
+func (m *Matrix) SetRow(vals []numVal, row int) error {
 
 	if row >= m.r && row != 0 {
 		return errors.New("out of bounds")
@@ -107,7 +114,7 @@ func (m *Matrix) SetRow(vals []complex128, row int) error {
 	return nil
 }
 
-func (m *Matrix) SetCol(vals []complex128, col int) error {
+func (m *Matrix) SetCol(vals []numVal, col int) error {
 	if col >= m.c {
 		return errors.New("out of bounds")
 	}
@@ -137,7 +144,7 @@ func ScaledPartialPivoting(source, x, b *Matrix) {
 	// & places largest values into scaledvector in order
 	for i := 0; i < n; i++ {
 		order = append(order, i)
-		s, _ := source.GetRow(i)
+		s := source.GetRow(i)
 
 		scaledVal := max(s[:])
 		scaledOrder = append(scaledOrder, scaledVal)
@@ -148,7 +155,7 @@ func ScaledPartialPivoting(source, x, b *Matrix) {
 		index := 0
 		//sets up pivot order of matrix
 		for i := k; i < n; i++ {
-			sourcelik, _ := source.Get(order[i], k)
+			sourcelik := source.Get(order[i], k)
 			r := math.Abs(real(sourcelik) / float64(scaledOrder[order[i]]))
 			if r > rmax {
 				rmax = r
@@ -158,14 +165,14 @@ func ScaledPartialPivoting(source, x, b *Matrix) {
 		swap(order[:], k, index)
 		//forward elimination phase
 		for i := k + 1; i < n; i++ {
-			alik, _ := source.Get(order[i], k)
-			alkk, _ := source.Get(order[k], k)
+			alik := source.Get(order[i], k)
+			alkk := source.Get(order[k], k)
 			xMult := alik / alkk
 			//storing xMult in the "zero" locations of matrix
 			source.Set(order[i], k, xMult)
 			for j := k + 1; j < n; j++ {
-				alij, _ := source.Get(order[i], j)
-				alkj, _ := source.Get(order[k], j)
+				alij := source.Get(order[i], j)
+				alkj := source.Get(order[k], j)
 
 				source.Set(order[i], j, alij-xMult*alkj)
 			}
@@ -193,12 +200,12 @@ func tri(n int, a, d, c, x, b *Matrix) {
 
 	//forward Elimination updates b vector
 	for i := 1; i < n; i++ {
-		aPrev, _ := a.Get(0, i-1)
-		dPrev, _ := d.Get(0, i-1)
-		bPrev, _ := b.Get(0, i-1)
-		cPrev, _ := c.Get(0, i-1)
-		dCur, _ := d.Get(0, i)
-		bCur, _ := b.Get(0, i)
+		aPrev := a.Get(0, i-1)
+		dPrev := d.Get(0, i-1)
+		bPrev := b.Get(0, i-1)
+		cPrev := c.Get(0, i-1)
+		dCur := d.Get(0, i)
+		bCur := b.Get(0, i)
 
 		xMult := aPrev / dPrev
 		d.Set(0, i, dCur-xMult*cPrev)
@@ -208,14 +215,14 @@ func tri(n int, a, d, c, x, b *Matrix) {
 
 	//backSubstitution phase:
 	//places answers into x using backSubstitution
-	bn, _ := b.Get(0, n-1)
-	dn, _ := d.Get(0, n-1)
+	bn := b.Get(0, n-1)
+	dn := d.Get(0, n-1)
 	x.Set(0, n-1, bn/dn)
 	for i := n - 2; i <= 0; i-- {
-		bCur, _ := b.Get(0, i)
-		cCur, _ := c.Get(0, i)
-		dCur, _ := d.Get(0, i)
-		xPrev, _ := x.Get(0, i+1)
+		bCur := b.Get(0, i)
+		cCur := c.Get(0, i)
+		dCur := d.Get(0, i)
+		xPrev := x.Get(0, i+1)
 		x.Set(0, i, (bCur-cCur*xPrev)/dCur)
 	}
 
@@ -235,20 +242,20 @@ func tri(n int, a, d, c, x, b *Matrix) {
 //			that is to say it will overwrite
 //			the matrices given
 func Penta(n int, e, a, d, c, f, x, b *Matrix) {
-	r, _ := a.Get(0, 1)
-	s, _ := a.Get(0, 2)
-	t, _ := e.Get(0, 1)
+	r := a.Get(0, 1)
+	s := a.Get(0, 2)
+	t := e.Get(0, 1)
 
 	for i := 1; i < n-2; i++ {
-		dPrev, _ := d.Get(0, i-1)
-		dNext, _ := d.Get(0, i+1)
-		dCur, _ := d.Get(0, i)
-		cPrev, _ := c.Get(0, i-1)
-		cCur, _ := c.Get(0, i)
-		fPrev, _ := f.Get(0, i-1)
-		bCur, _ := b.Get(0, i)
-		bPrev, _ := b.Get(0, i-1)
-		bNext, _ := b.Get(0, i+1)
+		dPrev := d.Get(0, i-1)
+		dNext := d.Get(0, i+1)
+		dCur := d.Get(0, i)
+		cPrev := c.Get(0, i-1)
+		cCur := c.Get(0, i)
+		fPrev := f.Get(0, i-1)
+		bCur := b.Get(0, i)
+		bPrev := b.Get(0, i-1)
+		bNext := b.Get(0, i+1)
 		xMult := r / dPrev
 
 		d.Set(0, i, dCur-xMult*cPrev)
@@ -259,16 +266,16 @@ func Penta(n int, e, a, d, c, f, x, b *Matrix) {
 		r = s - xMult*cPrev
 		d.Set(0, i+1, dNext-xMult*fPrev)
 		b.Set(0, i+1, bNext-xMult*bPrev)
-		s, _ = a.Get(0, i+1)
-		t, _ = e.Get(0, i)
+		s = a.Get(0, i+1)
+		t = e.Get(0, i)
 	}
-	dn, _ := d.Get(0, n-1)
-	dn1, _ := d.Get(0, n-2)
-	cn, _ := c.Get(0, n-1)
-	cn1, _ := c.Get(0, n-2)
-	bn, _ := b.Get(0, n-1)
-	bn1, _ := b.Get(0, n-2)
-	xn, _ := x.Get(0, n-1)
+	dn := d.Get(0, n-1)
+	dn1 := d.Get(0, n-2)
+	cn := c.Get(0, n-1)
+	cn1 := c.Get(0, n-2)
+	bn := b.Get(0, n-1)
+	bn1 := b.Get(0, n-2)
+	xn := x.Get(0, n-1)
 
 	xMult := r / dn1
 	d.Set(0, n-1, dn-xMult*cn1)
@@ -276,11 +283,11 @@ func Penta(n int, e, a, d, c, f, x, b *Matrix) {
 	x.Set(0, n-2, (bn1-cn*xn)/dn1)
 
 	for i := n - 3; i <= 0; i-- {
-		bCur, _ := b.Get(0, i)
-		fCur, _ := f.Get(0, i)
-		xPrev, _ := x.Get(0, i+1)
-		dCur, _ := d.Get(0, i-1)
-		cCur, _ := c.Get(0, i)
+		bCur := b.Get(0, i)
+		fCur := f.Get(0, i)
+		xPrev := x.Get(0, i+1)
+		dCur := d.Get(0, i-1)
+		cCur := c.Get(0, i)
 
 		x.Set(0, i, (bCur-fCur*xPrev-cCur*xPrev)/dCur)
 	}
@@ -296,33 +303,33 @@ func solve(n int, l []int, a, b, x *Matrix) {
 	//update b vector values
 	for k := 0; k < n; k++ {
 		for i := k + 1; i < n; i++ {
-			tmp, _ := b.Get(0, l[i])
-			tmp2, _ := b.Get(0, l[k])
-			coef, _ := a.Get(l[i], k)
+			tmp := b.Get(0, l[i])
+			tmp2 := b.Get(0, l[k])
+			coef := a.Get(l[i], k)
 			b.Set(0, l[i], tmp-coef*tmp2)
 		}
 	}
 
-	bln, _ := b.Get(0, l[n-1])
-	alnn, _ := a.Get(l[n-1], l[n-1])
+	bln := b.Get(0, l[n-1])
+	alnn := a.Get(l[n-1], l[n-1])
 	x.Set(0, n-1, bln/alnn)
 
 	//backprobagation phase
 	for i := n - 1; i >= 0; i-- {
-		sum, _ := b.Get(0, l[i])
+		sum := b.Get(0, l[i])
 		for j := i + 1; j < n; j++ {
-			xVal, _ := x.Get(0, j)
-			aVal, _ := a.Get(l[i], j)
+			xVal := x.Get(0, j)
+			aVal := a.Get(l[i], j)
 			sum = sum - xVal*aVal
 		}
-		aVal, _ := a.Get(l[i], i)
+		aVal := a.Get(l[i], i)
 		x.Set(0, i, sum/aVal)
 	}
 
 }
 
 //helper function to return the largest coeficient:
-func max(source []complex128) int {
+func max(source []numVal) int {
 	maxVal := 0
 	n := len(source)
 	for i := 0; i < n; i++ {
@@ -348,25 +355,25 @@ func swap(a []int, source, dest int) {
 
 //helper funciton for gaussian elimination, pivots inorder
 func forwardElimination(source, b *Matrix) {
-	var xMult complex128
+	var xMult numVal
 	n := int(source.ColCount())
 
 	for k := 0; k < n; k++ {
 		for i := k + 1; i < n; i++ {
-			coef, _ := source.Get(i, k)
-			div, _ := source.Get(k, k)
+			coef := source.Get(i, k)
+			div := source.Get(k, k)
 			xMult = coef / div
 			source.Set(i, k, xMult)
 
 			for j := k + 1; j < n; j++ {
-				coef, _ := source.Get(i, j)
-				mult, _ := source.Get(k, j)
+				coef := source.Get(i, j)
+				mult := source.Get(k, j)
 				val := coef - (xMult)*mult
 				source.Set(i, j, val)
 			}
 
-			finVal, _ := b.Get(0, i)
-			finMult, _ := b.Get(0, k)
+			finVal := b.Get(0, i)
+			finMult := b.Get(0, k)
 			b.Set(0, i, finVal-(xMult*finMult))
 		}
 	}
@@ -375,18 +382,18 @@ func forwardElimination(source, b *Matrix) {
 //helper function for gaussina elimination, finds solutions to source, plavins them in x
 func backSubstitution(source, b, x *Matrix) {
 	n := source.ColCount()
-	bn, _ := b.Get(0, n-1)
-	ann, _ := source.Get(n-1, n-1)
+	bn := b.Get(0, n-1)
+	ann := source.Get(n-1, n-1)
 	x.Set(0, n-1, bn/ann)
 
 	for i := n - 1; i >= 0; i-- {
-		sum, _ := b.Get(0, i)
+		sum := b.Get(0, i)
 		for j := i + 1; j < n; j++ {
-			ann, _ = source.Get(i, j)
-			xj, _ := x.Get(0, j)
+			ann = source.Get(i, j)
+			xj := x.Get(0, j)
 			sum = sum - ann*xj
 		}
-		ann, _ = source.Get(i, i)
+		ann = source.Get(i, i)
 
 		x.Set(0, i, sum/ann)
 	}
