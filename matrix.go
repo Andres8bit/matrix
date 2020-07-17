@@ -4,14 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/cmplx"
 )
 
-type numVal complex128
+//type complex128 complex128
 
 type Matrix struct {
-	m []numVal //matix made of Numtype
-	r int      //row count of matrix
-	c int      //col count of matrix
+	m []complex128 //matix made of Numtype
+	r int          //row count of matrix
+	c int          //col count of matrix
 }
 
 //============= Methods: ======================
@@ -27,13 +28,13 @@ func NewMatrix(row, col int) *Matrix {
 	matrix.c = col
 	if row == 0 || col == 0 {
 		if row != 0 {
-			matrix.m = make([]numVal, row)
+			matrix.m = make([]complex128, row)
 		} else {
-			matrix.m = make([]numVal, col)
+			matrix.m = make([]complex128, col)
 		}
 
 	} else {
-		matrix.m = make([]numVal, row*col)
+		matrix.m = make([]complex128, row*col)
 	}
 	return matrix
 }
@@ -42,7 +43,7 @@ func NewMatrix(row, col int) *Matrix {
 func (m *Matrix) Copy(source *Matrix) {
 	m.r = source.r
 	m.c = source.c
-	m.m = make([]numVal, m.r*m.c)
+	m.m = make([]complex128, m.r*m.c)
 	copy(m.m, source.m)
 }
 
@@ -53,7 +54,7 @@ func (m *Matrix) ColCount() int { return m.c }
 
 func (m *Matrix) RowCount() int { return m.r }
 
-func (m *Matrix) Get(row, col int) numVal {
+func (m *Matrix) Get(row, col int) complex128 {
 	if (row < m.r || row == 0) && (col < m.c || col == 0) {
 		return m.m[m.c*row+col]
 	}
@@ -62,8 +63,8 @@ func (m *Matrix) Get(row, col int) numVal {
 	return 0
 }
 
-func (m *Matrix) GetRow(row int) []numVal {
-	r := make([]numVal, m.c)
+func (m *Matrix) GetRow(row int) []complex128 {
+	r := make([]complex128, m.c)
 	if row >= m.r {
 		fmt.Println("Error: out of bounds")
 		return r
@@ -76,8 +77,8 @@ func (m *Matrix) GetRow(row int) []numVal {
 	return r
 }
 
-func (m *Matrix) GetCol(col int) []numVal {
-	c := make([]numVal, m.r)
+func (m *Matrix) GetCol(col int) []complex128 {
+	c := make([]complex128, m.r)
 
 	if col >= m.c {
 		fmt.Println("Error: out of bounds")
@@ -93,7 +94,7 @@ func (m *Matrix) GetCol(col int) []numVal {
 // ======== End of Getters: ========
 
 // ======== Setters: ========
-func (m *Matrix) Set(row, col int, val numVal) error {
+func (m *Matrix) Set(row, col int, val complex128) error {
 	if (row < m.r || row == 0) && (col < m.c || col == 0) {
 		m.m[row*m.c+col] = val
 
@@ -102,7 +103,7 @@ func (m *Matrix) Set(row, col int, val numVal) error {
 	return errors.New("out of bounds")
 }
 
-func (m *Matrix) SetRow(vals []numVal, row int) error {
+func (m *Matrix) SetRow(vals []complex128, row int) error {
 
 	if row >= m.r && row != 0 {
 		return errors.New("out of bounds")
@@ -114,7 +115,7 @@ func (m *Matrix) SetRow(vals []numVal, row int) error {
 	return nil
 }
 
-func (m *Matrix) SetCol(vals []numVal, col int) error {
+func (m *Matrix) SetCol(vals []complex128, col int) error {
 	if col >= m.c {
 		return errors.New("out of bounds")
 	}
@@ -294,6 +295,158 @@ func Penta(n int, e, a, d, c, f, x, b *Matrix) {
 
 }
 
+//=============== Doolittle Factorization: =====================
+func Doolittle(a *Matrix) (lower, upper *Matrix) {
+	n := a.ColCount()
+	lower = NewMatrix(n, n)
+	upper = NewMatrix(n, n)
+	for k := 0; k < n; k++ {
+		lower.Set(k, k, 1)
+		for j := k; k < n; k++ {
+			sum := complex128(0)
+			for s := 0; s < k; s++ {
+				sum += lower.Get(k, s) * upper.Get(s, j)
+			}
+			upper.Set(k, j, a.Get(k, j)-sum)
+		}
+
+		for i := k + 1; i < n; i++ {
+			sum := complex128(0)
+
+			for s := 0; s < k; s++ {
+				sum += lower.Get(i, s) * upper.Get(s, k)
+
+			}
+			lowerVal := (a.Get(i, k) - sum) / upper.Get(k, k)
+
+			lower.Set(i, k, lowerVal)
+		}
+	}
+	return lower, upper
+}
+
+// Foward Substitution phase:
+// works with Dooolittle Factorization, taking the lower unit matrix and using it to sovle for z
+// in Ax = b -> LUx = b -> Lz = b -> Ux = z
+// INPUT : The user must pass both the lower matrix (l) and the b vector matrix
+// OUTPUT : zi the z vector being solved for.
+
+func LUForwardSub(l, b *Matrix) (z *Matrix) {
+	n := b.ColCount()
+	z = NewMatrix(1, n)
+	z.Set(0, 0, b.Get(0, 0))
+
+	for i := 1; i < n; i++ {
+		sum := complex128(0)
+		for j := 0; j < i; j++ {
+			sum += l.Get(i, j) + z.Get(0, j)
+		}
+
+		z.Set(0, i, b.Get(0, i)-sum)
+	}
+
+	return z
+}
+
+func LUBackSub(u, z *Matrix) (x *Matrix) {
+	n := u.ColCount()
+	x = NewMatrix(0, n)
+	x.Set(0, n-1, z.Get(0, n-1)/u.Get(n-1, n-1))
+
+	for i := n - 2; i <= 0; i-- {
+		sum := complex128(0)
+		for j := i + 1; j < n; j++ {
+			sum += u.Get(i, j) * x.Get(0, j)
+		}
+		sum = sum / u.Get(i, i)
+		x.Set(0, i, z.Get(0, i)-sum)
+
+	}
+
+	return x
+}
+
+func LUUpdateRHSB(a, b *Matrix) {
+	n := a.ColCount()
+	for k := 0; k < n; k++ {
+		for i := k + 1; i < n; i++ {
+			val := b.Get(0, i) - a.Get(i, k)*b.Get(0, k)
+			b.Set(0, i, val)
+		}
+	}
+
+}
+
+//LDLTranspose Factorization:
+// INPUT: a and its diagonal D matrix.
+// OUTPUT: L lower triangular Matrix
+func LDLTFactorization(a *Matrix) (l, d *Matrix) {
+	n := a.ColCount()
+	l = NewMatrix(n, n)
+	d = NewMatrix(0, n)
+
+	for j := 0; j < n; j++ {
+		l.Set(j, j, 1)
+		sum := complex128(0)
+
+		for v := 0; v < j; v++ { //does not iterate on first loop
+			ljv := l.Get(j, v) // this leaves d(0,0) = a(0,0)
+			ljv = ljv * ljv
+			dia := d.Get(0, v)
+			sum += dia * ljv
+		}
+
+		d.Set(0, j, a.Get(j, j)-sum)
+
+		for i := j + 1; i < n; i++ {
+			l.Set(j, i, 0)
+			sum := complex128(0)
+
+			for v := 1; v < j; v++ {
+				sum += l.Get(i, v) * d.Get(0, v) * l.Get(j, v)
+			}
+			sum = (a.Get(i, j) - sum) / d.Get(0, j)
+			l.Set(i, j, sum)
+		}
+	}
+
+	return l, d
+}
+
+// Cholesky Factorization:
+// Given: a Symmetric, Positive Definite (SPD) Matrix
+// Returns: l a Lower Triangular Matrix
+// that is to say given A returns L in
+// A = LL^T
+func CholeskyFactorization(a *Matrix) (l *Matrix) {
+	n := a.ColCount()
+	l = NewMatrix(n, n)
+
+	for k := 0; k < n; k++ {
+		sum := complex128(0)
+		for s := 0; s < k; s++ {
+			lval := l.Get(k, s)
+			sum += lval * lval
+		}
+
+		sum = a.Get(k, k) - sum
+		sum = cmplx.Sqrt(sum)
+		l.Set(k, k, sum)
+
+		for i := k + 1; k < n; i++ {
+			sum := complex128(0)
+			for s := 0; s < k; s++ {
+				sum += l.Get(i, s) * l.Get(k, s)
+			}
+			sum = a.Get(i, k) - sum
+			sum = sum / l.Get(k, k)
+			l.Set(i, k, sum)
+		}
+	}
+
+	return l
+}
+
 //================ End of Functions ======================
 
 //================ helper funcitons ======================
@@ -329,7 +482,7 @@ func solve(n int, l []int, a, b, x *Matrix) {
 }
 
 //helper function to return the largest coeficient:
-func max(source []numVal) int {
+func max(source []complex128) int {
 	maxVal := 0
 	n := len(source)
 	for i := 0; i < n; i++ {
@@ -355,7 +508,7 @@ func swap(a []int, source, dest int) {
 
 //helper funciton for gaussian elimination, pivots inorder
 func forwardElimination(source, b *Matrix) {
-	var xMult numVal
+	var xMult complex128
 	n := int(source.ColCount())
 
 	for k := 0; k < n; k++ {
