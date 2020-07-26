@@ -128,12 +128,39 @@ func TestNaiveElimination(t *testing.T) {
 	bmat.SetRow(b[:], 0)
 	matrix.Naive(a, xmat, bmat)
 	for i := 0; i < 4; i++ {
-		truth := xmat.Get(0, i)
+		u := xmat.Get(0, i)
 		if test[i] != truth {
 			t.Errorf("incorrect val")
 
 		}
 	}
+}
+
+func TestNaiveMultiplication(t *testing.T) {
+	a1 := [...]complex12{1, 0, -2}
+	a2 := [...]complex128{0, 3, -1}
+	b1 := [...]complex128{0, 3}
+	b2 := [...]complex128{-2, -1}
+	b3 := [...]complex128{0, 4}
+	ab1 := [...]complex128{0, -5}
+	ab2 := [...]complex128{-6, -7}
+
+	a := matrix.NewMatrix(2, 3)
+	b := matrix.NewMatrix(3, 2)
+	ab := matrix.NewMatrix(2, 2)
+
+	a.SetRow(0, a1)
+	a.SetRow(1, a2)
+
+	b.SetRow(0, b1)
+	b.SetRow(1, b2)
+	b.SetRow(2, b3)
+
+	ab.SetRow(0, ab1)
+	ab.SetRow(1, ab2)
+
+	result := matrix.NaiveMult(a, b)
+
 }
 
 // func TestScaledPartialPivoting(t *testing.T) {

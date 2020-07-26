@@ -7,8 +7,7 @@ import (
 	"math/cmplx"
 )
 
-//type complex128 complex128
-
+type F func(complex128) complex128
 type Matrix struct {
 	m []complex128 //matix made of Numtype
 	r int          //row count of matrix
@@ -447,6 +446,31 @@ func CholeskyFactorization(a *Matrix) (l *Matrix) {
 	return l
 }
 
+func Power(a, x, y *Matrix, varphi F, kMax int) (complex128, []complex128) {
+	n := a.ColCount()
+	eig := complex128(0)
+	eigVect := make([]complex128, n)
+
+	for i := 0; i < kMax; i++ {
+		//y =
+
+	}
+
+	return eig, eigVect
+}
+
+// ungar's/3m method"
+// Given a and b are matrices, such that a = A1 +iA2, b = B1 +iB2
+// define C as C = A*B = C1 +iC2
+// then we can construct C using the following:
+// T1 = A1*B1  , T2 = A2*B2
+// C1 = T1-T2, C2 = [A1+A2][B1+B2] -T1-T2 = [A1+A2][B1+B2] - C1
+func Mult(a, b *Matrix) (result *Matrix) {
+
+	return result
+
+}
+
 //================ End of Functions ======================
 
 //================ helper funcitons ======================
@@ -550,6 +574,25 @@ func backSubstitution(source, b, x *Matrix) {
 
 		x.Set(0, i, sum/ann)
 	}
+}
+
+func NaiveMult(a, b *Matrix) *Matrix {
+	if a.ColCount() != b.RowCount() {
+		return nil
+	}
+	r := a.RowCount()
+	c := b.ColCount()
+	result := NewMatrix(r, c)
+	for i := 0; i < r; i++ {
+		for k := 0; k < c; k++ {
+			for j := 0; j < c; j++ {
+				val := a.Get(i, k) * b.Get(k, j)
+				result.Set(i, j, val)
+			}
+		}
+	}
+
+	return result
 }
 
 //================ End of Helpers ======================
