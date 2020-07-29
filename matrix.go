@@ -48,6 +48,39 @@ func (m *Matrix) Copy(source *Matrix) {
 
 //  ========== End of constructors ==========
 
+// Printer method to print matrix in r x c format:
+//need to add formating tools to make output nice for any size matrix
+
+func (m *Matrix) Print() {
+	r := m.r
+	c := m.c
+
+	for i := 0; i < r; i++ {
+		fmt.Print("")
+		for j := 0; j < c; j++ {
+			fmt.Print(m.Get(i, j), " ")
+		}
+		fmt.Println(" ")
+	}
+}
+
+func (m *Matrix) Equals(a *Matrix) bool {
+	r := m.r
+	c := m.c
+
+	if r != a.r || c != a.c {
+		return false
+	}
+
+	for i := 0; i < r*c; i++ {
+		if m.m[i] != a.m[i] {
+			return false
+		}
+
+	}
+	return true
+}
+
 // =========== Getters: ===========
 func (m *Matrix) ColCount() int { return m.c }
 
@@ -57,36 +90,44 @@ func (m *Matrix) Get(row, col int) complex128 {
 	if (row < m.r || row == 0) && (col < m.c || col == 0) {
 		return m.m[m.c*row+col]
 	}
-	fmt.Println("Error: out of bounds")
+	fmt.Println("Get: out of bounds")
 
 	return 0
 }
 
 func (m *Matrix) GetRow(row int) []complex128 {
-	r := make([]complex128, m.c)
+	n := m.c
+	r := make([]complex128, n)
 	if row >= m.r {
-		fmt.Println("Error: out of bounds")
+		fmt.Println("GetRow: out of bounds")
 		return r
 	}
 
-	for i := 0; i < m.c; i++ {
-		r[i] = m.m[row*m.r+i]
+	start := row * n
+
+	for i := 0; i < n; i++ {
+		r[i] = m.m[start+i]
 	}
 
 	return r
 }
 
 func (m *Matrix) GetCol(col int) []complex128 {
-	c := make([]complex128, m.r)
+	rowC := m.r
+	colC := m.c
+	c := make([]complex128, rowC)
 
-	if col >= m.c {
-		fmt.Println("Error: out of bounds")
+	if col >= colC {
+		fmt.Println("GetCol: out of bounds")
 		return c
 	}
-	var i int
-	for ; i < m.c; i++ {
-		c[i] = m.m[i*m.c+col]
+
+	for i := 0; i < rowC; i++ {
+		c[i] = m.m[col]
+		col += colC
+
 	}
+
 	return c
 }
 
@@ -99,13 +140,13 @@ func (m *Matrix) Set(row, col int, val complex128) error {
 
 		return nil
 	}
-	return errors.New("out of bounds")
+	return errors.New("Set:out of bounds")
 }
 
 func (m *Matrix) SetRow(vals []complex128, row int) error {
 
 	if row >= m.r && row != 0 {
-		return errors.New("out of bounds")
+		return errors.New("SetRow:out of bounds")
 	}
 
 	for i := 0; i < m.c; i++ {
@@ -116,10 +157,11 @@ func (m *Matrix) SetRow(vals []complex128, row int) error {
 
 func (m *Matrix) SetCol(vals []complex128, col int) error {
 	if col >= m.c {
-		return errors.New("out of bounds")
+
+		return errors.New("SetCol:out of bounds")
 	}
 
-	for i := 0; i < m.c; i++ {
+	for i := 0; i < m.r; i++ {
 		m.m[i*m.c+col] = vals[i]
 	}
 
@@ -577,19 +619,32 @@ func backSubstitution(source, b, x *Matrix) {
 }
 
 func NaiveMult(a, b *Matrix) *Matrix {
-	if a.ColCount() != b.RowCount() {
-		return nil
-	}
 	r := a.RowCount()
 	c := b.ColCount()
+	if r != c {
+		return nil
+	}
+
 	result := NewMatrix(r, c)
 	for i := 0; i < r; i++ {
-		for k := 0; k < c; k++ {
-			for j := 0; j < c; j++ {
-				val := a.Get(i, k) * b.Get(k, j)
-				result.Set(i, j, val)
-			}
+		for j := 0; j < c; j++ {
+			val := dot(a.GetRow(i), b.GetCol(j))
+			result.Set(i, j, complex(val, 0))
 		}
+	}
+
+	fmt.Println("new matrix:", result)
+	return result
+}
+
+//returns dot product but only on realy portion of complex number,
+//returns a floating point number
+// meaning: result := x + 0i, where x:= Sum (ai*bi) i->len(a)
+func dot(a, b []complex128) float64 {
+	result := 0.0
+	n := len(a)
+	for i := 0; i < n; i++ {
+		result += real(a[i]) * real(b[i])
 	}
 
 	return result

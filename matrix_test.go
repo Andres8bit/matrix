@@ -5,7 +5,8 @@ import (
 	"testing"
 	"time"
 
-	matrix "github.com/andres8bit/matrix"
+	//"github.com/andres8bit/matrix"
+	matrix "github.com/andres8bit/numerical_methods/src/matrix"
 )
 
 func TestConstructor(t *testing.T) {
@@ -54,7 +55,7 @@ func TestGetSetRow(t *testing.T) {
 	row := int(r.Int63n(9))
 
 	m.SetRow(list[:], row)
-	test, _ := m.GetRow(row)
+	test := m.GetRow(row)
 
 	for i := 0; i < 10; i++ {
 		if test[i] != list[i] {
@@ -100,8 +101,8 @@ func TestCopy(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		for j := 0; j < 10; j++ {
-			val, _ := test.Get(i, j)
-			truth, _ := m.Get(i, j)
+			val := test.Get(i, j)
+			truth := m.Get(i, j)
 			if val != truth {
 				t.Errorf("copy failed")
 			}
@@ -110,34 +111,34 @@ func TestCopy(t *testing.T) {
 
 }
 
-func TestNaiveElimination(t *testing.T) {
-	r1 := [...]complex128{6, -2, 2, 4}
-	r2 := [...]complex128{12, -8, 6, 10}
-	r3 := [...]complex128{3, -13, 9, 3}
-	r4 := [...]complex128{-6, 4, 1, -18}
-	b := [...]complex128{16, 26, -19, -34}
-	test := [...]complex128{3, 1, -2, 1}
+// func TestNaiveElimination(t *testing.T) {
+// 	r1 := [...]complex128{6, -2, 2, 4}
+// 	r2 := [...]complex128{12, -8, 6, 10}
+// 	r3 := [...]complex128{3, -13, 9, 3}
+// 	r4 := [...]complex128{-6, 4, 1, -18}
+// 	b := [...]complex128{16, 26, -19, -34}
+// 	test := [...]complex128{3, 1, -2, 1}
 
-	a := matrix.NewMatrix(4, 4)
-	xmat := matrix.NewMatrix(0, 4)
-	a.SetRow(r1[:], 0)
-	a.SetRow(r2[:], 1)
-	a.SetRow(r3[:], 2)
-	a.SetRow(r4[:], 3)
-	bmat := matrix.NewMatrix(0, 4)
-	bmat.SetRow(b[:], 0)
-	matrix.Naive(a, xmat, bmat)
-	for i := 0; i < 4; i++ {
-		u := xmat.Get(0, i)
-		if test[i] != truth {
-			t.Errorf("incorrect val")
+// 	a := matrix.NewMatrix(4, 4)
+// 	xmat := matrix.NewMatrix(0, 4)
+// 	a.SetRow(r1[:], 0)
+// 	a.SetRow(r2[:], 1)
+// 	a.SetRow(r3[:], 2)
+// 	a.SetRow(r4[:], 3)
+// 	bmat := matrix.NewMatrix(0, 4)
+// 	bmat.SetRow(b[:], 0)
+// 	matrix.Naive(a, xmat, bmat)
+// 	for i := 0; i < 4; i++ {
+// 		u := xmat.Get(0, i)
+// 		if test[i] != truth {
+// 			t.Errorf("incorrect val")
 
-		}
-	}
-}
+// 		}
+// 	}
+// }
 
 func TestNaiveMultiplication(t *testing.T) {
-	a1 := [...]complex12{1, 0, -2}
+	a1 := [...]complex128{1, 0, -2}
 	a2 := [...]complex128{0, 3, -1}
 	b1 := [...]complex128{0, 3}
 	b2 := [...]complex128{-2, -1}
@@ -149,17 +150,21 @@ func TestNaiveMultiplication(t *testing.T) {
 	b := matrix.NewMatrix(3, 2)
 	ab := matrix.NewMatrix(2, 2)
 
-	a.SetRow(0, a1)
-	a.SetRow(1, a2)
+	a.SetRow(a1[:], 0)
+	a.SetRow(a2[:], 1)
 
-	b.SetRow(0, b1)
-	b.SetRow(1, b2)
-	b.SetRow(2, b3)
+	b.SetRow(b1[:], 0)
+	b.SetRow(b2[:], 1)
+	b.SetRow(b3[:], 2)
 
-	ab.SetRow(0, ab1)
-	ab.SetRow(1, ab2)
+	ab.SetRow(ab1[:], 0)
+	ab.SetRow(ab2[:], 1)
 
 	result := matrix.NaiveMult(a, b)
+
+	if !result.Equals(ab) {
+		t.Errorf("matrix multiply failed")
+	}
 
 }
 
@@ -181,11 +186,11 @@ func TestNaiveMultiplication(t *testing.T) {
 
 // 	matrix.ScaledPartialPivoting(a, xmat, bmat)
 // 	for i := 0; i < 4; i++ {
-// 		truth, _ := xmat.Get(0, i)
-// 		if test[i] != rtruth {
+// 		truth := xmat.Get(0, i)
+// 		if test[i] != truth {
 // 			t.Errorf("incorrect val")
 
 // 		}
 // 	}
 
-//}
+// }
